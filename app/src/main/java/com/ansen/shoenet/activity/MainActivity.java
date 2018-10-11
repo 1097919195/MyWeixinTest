@@ -33,8 +33,8 @@ import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private IWXAPI wxAPI;
-    private TextView tvNickname,tvAge;
-    public static final int IMAGE_SIZE=32768;//微信分享图片大小限制
+    private TextView tvNickname, tvAge;
+    public static final int IMAGE_SIZE = 32768;//微信分享图片大小限制
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         EventBus.getDefault().register(this);//注册
-        wxAPI = WXAPIFactory.createWXAPI(this,Constant.WECHAT_APPID,true);
+        wxAPI = WXAPIFactory.createWXAPI(this, Constant.WECHAT_APPID, true);
         wxAPI.registerApp(Constant.WECHAT_APPID);
 
         findViewById(R.id.btn_login).setOnClickListener(this);
@@ -50,13 +50,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_share_friend).setOnClickListener(this);
         findViewById(R.id.btn_pay).setOnClickListener(this);
 
-        tvNickname= (TextView) findViewById(R.id.tv_nickname);
-        tvAge=(TextView) findViewById(R.id.tv_age);
+        tvNickname = (TextView) findViewById(R.id.tv_nickname);
+        tvAge = (TextView) findViewById(R.id.tv_age);
     }
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.btn_login://微信登录
                 login();
                 break;
@@ -68,7 +68,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_pay://微信支付
 //              先去服务器获取支付信息，返回一个WeiXinPay对象，然后调用pay方法
-                showToast("微信支付需要服务器支持");
+                showToast("微信支付需要服务器等支持");
+            //模拟服务器返回WeiXinPay(下面的参数不对)
+//                WeiXinPay weiXinPay = new WeiXinPay();
+//                weiXinPay.setNoncestr("5K8264ILTKCH16CQ2502SI8ZNMTM67VS");//随机字符串，不长于32位。推荐随机数生成算法
+//                weiXinPay.setPackage_value("Sign=WXPay");//暂填写固定值Sign=WXPay
+//                weiXinPay.setSign("7FFECB600D7157C5AA49810D2D8F28BC2811827B");//签名
+//                weiXinPay.setPartnerid("1900000109");//微信支付分配的商户号
+//                weiXinPay.setPrepayid("WX1217752501201407033233368018");//微信返回的支付交易会话ID
+//                weiXinPay.setTimestamp("1412000000");//时间戳
+//                pay(weiXinPay);
+                break;
+            default:
                 break;
         }
     }
@@ -76,15 +87,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 这里用到的了EventBus框架
      * 博客教程:http://blog.csdn.net/lmj623565791/article/details/40920453
+     *
      * @param weiXin
      */
     @Subscribe
-    public void onEventMainThread(WeiXin weiXin){
-        Log.i("ansen","收到eventbus请求 type:"+weiXin.getType());
-        if(weiXin.getType()==1){//登录
+    public void onEventMainThread(WeiXin weiXin) {
+        Log.i("ansen", "收到eventbus请求 type:" + weiXin.getType());
+        if (weiXin.getType() == 1) {//登录
             getAccessToken(weiXin.getCode());
-        }else if(weiXin.getType()==2){//分享
-            switch (weiXin.getErrCode()){
+        } else if (weiXin.getType() == 2) {//分享
+            switch (weiXin.getErrCode()) {
                 case BaseResp.ErrCode.ERR_OK:
                     Log.i("ansen", "微信分享成功.....");
                     break;
@@ -95,8 +107,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.i("ansen", "微信分享被拒绝.....");
                     break;
             }
-        }else if(weiXin.getType()==3){//微信支付
-            if(weiXin.getErrCode()==BaseResp.ErrCode.ERR_OK){//成功
+        } else if (weiXin.getType() == 3) {//微信支付
+            if (weiXin.getErrCode() == BaseResp.ErrCode.ERR_OK) {//成功
                 Log.i("ansen", "微信支付成功.....");
             }
         }
@@ -108,53 +120,54 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 2.根据授权登陆code 获取该用户token
      * 3.根据token获取用户资料
      */
-    public void login(){
+    public void login() {
         SendAuth.Req req = new SendAuth.Req();
         req.scope = "snsapi_userinfo";
         req.state = String.valueOf(System.currentTimeMillis());
         wxAPI.sendReq(req);
     }
 
-    public void getAccessToken(String code){
+    public void getAccessToken(String code) {
         String url = "https://api.weixin.qq.com/sns/oauth2/access_token?" +
-                "appid="+Constant.WECHAT_APPID+"&secret="+Constant.WECHAT_SECRET+
-                "&code="+code+"&grant_type=authorization_code";
+                "appid=" + Constant.WECHAT_APPID + "&secret=" + Constant.WECHAT_SECRET +
+                "&code=" + code + "&grant_type=authorization_code";
         HTTPCaller.getInstance().get(WeiXinToken.class, url, null, new RequestDataCallback<WeiXinToken>() {
             @Override
             public void dataCallback(WeiXinToken obj) {
-                if(obj.getErrcode()==0){//请求成功
+                if (obj.getErrcode() == 0) {//请求成功
                     getWeiXinUserInfo(obj);
-                }else{//请求失败
+                } else {//请求失败
                     showToast(obj.getErrmsg());
                 }
             }
         });
     }
 
-    public void getWeiXinUserInfo(WeiXinToken weiXinToken){
-        String url = "https://api.weixin.qq.com/sns/userinfo?access_token="+
-                weiXinToken.getAccess_token()+"&openid="+weiXinToken.getOpenid();
+    public void getWeiXinUserInfo(WeiXinToken weiXinToken) {
+        String url = "https://api.weixin.qq.com/sns/userinfo?access_token=" +
+                weiXinToken.getAccess_token() + "&openid=" + weiXinToken.getOpenid();
         HTTPCaller.getInstance().get(WeiXinInfo.class, url, null, new RequestDataCallback<WeiXinInfo>() {
             @Override
             public void dataCallback(WeiXinInfo obj) {
-                tvNickname.setText("昵称:"+obj.getNickname());
-                tvAge.setText("年龄:"+obj.getAge());
-                Log.i("ansen","头像地址:"+obj.getHeadimgurl());
+                tvNickname.setText("昵称:" + obj.getNickname());
+                tvAge.setText("年龄:" + obj.getAge());
+                Log.i("ansen", "头像地址:" + obj.getHeadimgurl());
             }
         });
     }
 
     /**
      * 微信分享
-     * @param friendsCircle  是否分享到朋友圈
+     *
+     * @param friendsCircle 是否分享到朋友圈
      */
-    public void share(boolean friendsCircle){
+    public void share(boolean friendsCircle) {
         WXWebpageObject webpage = new WXWebpageObject();
         webpage.webpageUrl = "www.baidu.com";//分享url
         WXMediaMessage msg = new WXMediaMessage(webpage);
         msg.title = "分享标题";
         msg.description = "分享描述";
-        msg.thumbData =getThumbData();//封面图片byte数组
+        msg.thumbData = getThumbData();//封面图片byte数组
 
         SendMessageToWX.Req req = new SendMessageToWX.Req();
         req.transaction = String.valueOf(System.currentTimeMillis());
@@ -165,12 +178,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 获取分享封面byte数组 我们这边取的是软件启动icon
+     *
      * @return
      */
-    private  byte[] getThumbData() {
+    private byte[] getThumbData() {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize=2;
-        Bitmap bitmap=BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher,options);
+        options.inSampleSize = 2;
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher, options);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
         int quality = 100;
@@ -191,24 +205,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 发起支付
+     *
      * @param weiXinPay
      */
-    public void pay(WeiXinPay weiXinPay){
+    public void pay(WeiXinPay weiXinPay) {
         PayReq req = new PayReq();
         req.appId = Constant.WECHAT_APPID;//appid
-        req.nonceStr=weiXinPay.getNoncestr();//随机字符串，不长于32位。推荐随机数生成算法
-        req.packageValue=weiXinPay.getPackage_value();//暂填写固定值Sign=WXPay
-        req.sign=weiXinPay.getSign();//签名
-        req.partnerId=weiXinPay.getPartnerid();//微信支付分配的商户号
-        req.prepayId=weiXinPay.getPrepayid();//微信返回的支付交易会话ID
-        req.timeStamp=weiXinPay.getTimestamp();//时间戳
+        req.nonceStr = weiXinPay.getNoncestr();//随机字符串，不长于32位。推荐随机数生成算法
+        req.packageValue = weiXinPay.getPackage_value();//暂填写固定值Sign=WXPay
+        req.sign = weiXinPay.getSign();//签名
+        req.partnerId = weiXinPay.getPartnerid();//微信支付分配的商户号
+        req.prepayId = weiXinPay.getPrepayid();//微信返回的支付交易会话ID
+        req.timeStamp = weiXinPay.getTimestamp();//时间戳
 
         wxAPI.registerApp(Constant.WECHAT_APPID);
         wxAPI.sendReq(req);
     }
 
-    public void showToast(String message){
-        Toast.makeText(this,message,Toast.LENGTH_LONG).show();
+    public void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
