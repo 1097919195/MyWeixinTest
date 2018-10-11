@@ -5,6 +5,9 @@ package com.ansen.shoenet.utils;
  * @create time 2017-09-14
  */
 public class Constant {
-    public static String WECHAT_APPID="wxda6db2aec81d89af";
-    public static String WECHAT_SECRET="8fed5a21d5e0022587ef8a6194c965be3";
+    public static String WECHAT_APPID="wxfd9dfb6ebc9c09cc";
+    public static String WECHAT_SECRET="f860f07848dbd94de81a440ed04c80f3";
+    //我的
+//    public static String WECHAT_APPID="wxfd9dfb6ebc9c09cc";
+//    public static String WECHAT_SECRET="f860f07848dbd94de81a440ed04c80f3";
 }
